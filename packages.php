@@ -461,6 +461,8 @@ function e($value) {
     </div>
 <?php endif; ?>
 
+<?php include __DIR__ . '/includes/navbar.php'; ?>
+
 <!-- HERO -->
 <header class="package-hero">
     <div class="container position-relative">

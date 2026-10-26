@@ -1,9 +1,8 @@
-
 <?php
 session_start();
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-    header("Location: index.php#contact");
+    header("Location: contact.php");
     exit;
 }
 
@@ -38,7 +37,7 @@ if ($message === "" || strlen($message) > 5000) {
 
 if ($errors) {
     $_SESSION["contact_errors"] = $errors;
-    header("Location: index.php#contact");
+    header("Location: contact.php");
     exit;
 }
 

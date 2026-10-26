@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top driven-nav">
     <div class="container">
 
-        <a class="navbar-brand" href="index.php#home">
+        <a class="navbar-brand" href="index">
             <span class="brand-mark">D</span> Drive<span>N</span>
         </a>
 
@@ -15,11 +15,11 @@
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3">
 
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php#home">Home</a>
+                    <a class="nav-link" href="index">Home</a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php#lessons">Lessons</a>
+                    <a class="nav-link" href="lessons">Lessons</a>
                 </li>
 
 
@@ -31,22 +31,22 @@
 
                     <ul class="dropdown-menu driven-dropdown" aria-labelledby="packagesDropdown">
                         <li>
-                            <a class="dropdown-item" href="basic-package.php">
+                            <a class="dropdown-item" href="basic-package">
                                 Basic Package
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="standard-package.php">
+                            <a class="dropdown-item" href="standard-package">
                                 Standard Package
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="individual-lessons.php">
+                            <a class="dropdown-item" href="individual-lessons">
                                 Individual Package
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="custom-packages.php">
+                            <a class="dropdown-item" href="custom-packages">
                                 Custom Package
                             </a>
                         </li>
@@ -55,23 +55,23 @@
 
 
                 <li class="nav-item">
-                    <a class="nav-link" href="services.php">Services</a>
+                    <a class="nav-link" href="services">Services</a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="about.php">About</a>
+                    <a class="nav-link" href="about">About</a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="reviews.php">Reviews</a>
+                    <a class="nav-link" href="reviews">Reviews</a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php#contact">Contact</a>
+                    <a class="nav-link" href="contact">Contact</a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="btn btn-gold nav-cta" href="booking.php">
+                    <a class="btn btn-gold nav-cta" href="booking">
                         Book a Lesson ↗
                     </a>
                 </li>
