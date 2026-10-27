@@ -4,7 +4,7 @@ session_start();
 
 require_once __DIR__ . '/../config/db.php';
 
-// Check that your existing database connection
+// Check that existing database connection
 // uses PDO and the variable is named $pdo.
 try {
     $stmt = $pdo->query(

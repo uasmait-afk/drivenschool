@@ -234,6 +234,8 @@ function e($value) {
 
 <body class="basic-page">
 
+    <?php require_once __DIR__ . '/includes/navbar.php'; ?>
+
     <!-- HERO SECTION -->
     <header class="basic-hero">
         <div class="container">

@@ -1,7 +1,11 @@
+
+
+
+
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top driven-nav">
     <div class="container">
 
-        <a class="navbar-brand" href="index">
+        <a class="navbar-brand" href="/drivenschool/">
             <span class="brand-mark">D</span> Drive<span>N</span>
         </a>
 
@@ -15,11 +19,11 @@
             <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-3">
 
                 <li class="nav-item">
-                    <a class="nav-link" href="index">Home</a>
+                    <a class="nav-link" href="/drivenschool/home">Home</a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="lessons">Lessons</a>
+                    <a class="nav-link" href="/drivenschool/lessons">Lessons</a>
                 </li>
 
 
@@ -31,22 +35,22 @@
 
                     <ul class="dropdown-menu driven-dropdown" aria-labelledby="packagesDropdown">
                         <li>
-                            <a class="dropdown-item" href="basic-package">
+                            <a class="dropdown-item" href="/drivenschool/basic-package">
                                 Basic Package
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="standard-package">
+                            <a class="dropdown-item" href="/drivenschool/standard-package">
                                 Standard Package
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="individual-lessons">
+                            <a class="dropdown-item" href="/drivenschool/individual-lessons">
                                 Individual Package
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="custom-packages">
+                            <a class="dropdown-item" href="/drivenschool/custom-packages">
                                 Custom Package
                             </a>
                         </li>
@@ -55,23 +59,45 @@
 
 
                 <li class="nav-item">
-                    <a class="nav-link" href="services">Services</a>
+                    <a class="nav-link" href="/drivenschool/services">Services</a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="about">About</a>
+                    <a class="nav-link" href="/drivenschool/about">About</a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="reviews">Reviews</a>
+                    <a class="nav-link" href="/drivenschool/reviews">Reviews</a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="contact">Contact</a>
+                    <a class="nav-link" href="/drivenschool/contact">Contact</a>
                 </li>
+                
+                 <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="packagesDropdown" role="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        Client
+                    </a>
+
+                    <ul class="dropdown-menu driven-dropdown" aria-labelledby="packagesDropdown">
+                        <li>
+                            <a class="dropdown-item" href="/drivenschool/student-login">
+                                Login
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="/drivenschool/student-register">
+                                Register
+                            </a>
+                        </li>
+                        
+                    </ul>
+                </li>
+  
 
                 <li class="nav-item">
-                    <a class="btn btn-gold nav-cta" href="booking">
+                    <a class="btn btn-gold nav-cta" href="/drivenschool/booking">
                         Book a Lesson ↗
                     </a>
                 </li>
