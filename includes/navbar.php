@@ -1,7 +1,3 @@
-
-
-
-
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top driven-nav">
     <div class="container">
 
@@ -67,34 +63,15 @@
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="/drivenschool/reviews">Reviews</a>
+                    <a class="nav-link" href="/drivenschool/5-hour-class">
+                        5 Hour Class
+                    </a>
                 </li>
 
                 <li class="nav-item">
                     <a class="nav-link" href="/drivenschool/contact">Contact</a>
                 </li>
-                
-                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="packagesDropdown" role="button"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        Client
-                    </a>
 
-                    <ul class="dropdown-menu driven-dropdown" aria-labelledby="packagesDropdown">
-                        <li>
-                            <a class="dropdown-item" href="/drivenschool/student-login">
-                                Login
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="/drivenschool/student-register">
-                                Register
-                            </a>
-                        </li>
-                        
-                    </ul>
-                </li>
-  
 
                 <li class="nav-item">
                     <a class="btn btn-gold nav-cta" href="/drivenschool/booking">

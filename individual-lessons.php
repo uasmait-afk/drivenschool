@@ -489,7 +489,7 @@ $services = [
 <body>
 
     <!-- Navbar -->
-   <?php require_once __DIR__ . '/includes/navbar.php'; ?>
+    <?php require_once __DIR__ . '/includes/navbar.php'; ?>
 
     <!-- Hero Section -->
     <section class="individual-hero">

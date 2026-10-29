@@ -18,8 +18,8 @@ $routes = [
     'standard-package' => 'standard-package.php',
     'individual-lessons' => 'individual-lessons.php',
     'custom-packages' => 'custom-packages.php',
-    'student-register' => 'student-register.php',
-    'student-login' => 'student-login.php',
+    '5-hour-class' => '5-hour-class.php',
+    
 ];
 
 // Get URL from query parameter

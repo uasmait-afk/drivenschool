@@ -14,11 +14,12 @@ $courses = [
 ];
 
 $packages = [
-    ["Starter", "3 Lessons", "Perfect for getting started", "149"],
-    ["Popular", "6 Lessons", "Build skills and confidence", "279"],
-    ["Complete", "10 Lessons", "More practice, more confidence", "449"],
+    ["Basic", "3 Lessons", "Perfect for getting started", "149", "basic"],
+    ["Standard", "6 Lessons", "Build skills and confidence", "279", "standard"],
+    ["Individual", "10 Lessons", "More practice, more confidence", "449", "custom"],
+    
 ];
-$selectedPackage = strtolower($_GET['package'] ?? '');
+$selectedPackage = isset($_GET['package']) && is_string($_GET['package']) ? strtolower(trim($_GET['package'])) : '';
 
 $allowedPackages = [
     'basic' => 'Basic Package',
@@ -82,7 +83,7 @@ $selectedPackageName = $allowedPackages[$selectedPackage] ?? '';
                         <div class="hero-card-icon">✦</div>
                         <p>YOUR NEXT CHAPTER</p>
                         <h3>Freedom begins<br>behind the wheel.</h3>
-                        <a href="#contact">Start learning <span>↗</span></a>
+                        <a href="booking.php">Start learning <span>↗</span></a>
                     </div>
                 </div>
             </div>
@@ -121,7 +122,7 @@ $selectedPackageName = $allowedPackages[$selectedPackage] ?? '';
                         <div class="course-icon">↗</div>
                         <h3><?= htmlspecialchars($course[1]) ?></h3>
                         <p><?= htmlspecialchars($course[2]) ?></p>
-                        <a href="#contact" class="text-link">Learn more <span>↗</span></a>
+                        <a href="services.php" class="text-link">Learn more <span>↗</span></a>
                     </article>
                 </div>
                 <?php endforeach; ?>
@@ -160,7 +161,7 @@ $selectedPackageName = $allowedPackages[$selectedPackage] ?? '';
                             </p>
                         </div>
                     </div>
-                    <a href="#contact" class="btn btn-navy mt-3">Meet Your Next Milestone ↗</a>
+                    <a href="about.php" class="btn btn-navy mt-3">Meet Your Next Milestone ↗</a>
                 </div>
             </div>
         </div>
@@ -194,9 +195,10 @@ $selectedPackageName = $allowedPackages[$selectedPackage] ?? '';
                             <li>✓ Instructor guidance</li>
                             <li>✓ Practical driving skills</li>
                         </ul>
-                        <a href="#contact"
-                            class="btn <?= $index === 1 ? 'btn-gold' : 'btn-outline-light' ?> w-100">Choose Package
-                            ↗</a>
+                        <a href="packages.php?type=<?= rawurlencode($package[4]) ?>"
+                            class="btn <?= $index === 1 ? 'btn-gold' : 'btn-outline-light' ?> w-100">
+                            View <?= htmlspecialchars($package[0]) ?> Package ↗
+                        </a>
                     </article>
                 </div>
                 <?php endforeach; ?>
@@ -311,10 +313,6 @@ $selectedPackageName = $allowedPackages[$selectedPackage] ?? '';
     </section> -->
 
     <?php
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
-
 if (!empty($_SESSION["contact_success"])):
 ?>
     <div class="alert alert-success" role="status">
@@ -436,7 +434,7 @@ endif;
                         </form>
 
                         <p class="contact-note">
-                            Demo form: message delivery will work after backend integration.
+                            Your message will be submitted securely for the DriveN School team to review.
                         </p>
                     </div>
                 </div>
@@ -453,7 +451,7 @@ endif;
 
                 <!-- Brand -->
                 <div class="col-lg-4 col-md-6">
-                    <a href="#home" class="footer-brand">
+                    <a href="index.php#home" class="footer-brand">
                         <span class="footer-brand-mark">D</span>
                         Drive<span class="brand-gold">N</span>
                     </a>
@@ -478,11 +476,11 @@ endif;
                 <div class="col-lg-2 col-md-6">
                     <h4 class="footer-title">Quick Links</h4>
                     <ul class="footer-links">
-                        <li><a href="#home">Home</a></li>
-                        <li><a href="#about">About Us</a></li>
-                        <li><a href="#lessons">Lessons</a></li>
-                        <li><a href="#packages">Packages</a></li>
-                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="index.php#home">Home</a></li>
+                        <li><a href="about.php">About Us</a></li>
+                        <li><a href="services.php">Lessons</a></li>
+                        <li><a href="package.php">Packages</a></li>
+                        <li><a href="index.php#contact">Contact</a></li>
                     </ul>
                 </div>
 
@@ -490,10 +488,10 @@ endif;
                 <div class="col-lg-3 col-md-6">
                     <h4 class="footer-title">Our Services</h4>
                     <ul class="footer-links">
-                        <li><a href="#lessons">Beginner Driving</a></li>
-                        <li><a href="#lessons">Practical Lessons</a></li>
-                        <li><a href="#packages">Driving Packages</a></li>
-                        <li><a href="#contact">Book a Lesson</a></li>
+                        <li><a href="services.php">Beginner Driving</a></li>
+                        <li><a href="services.php">Practical Lessons</a></li>
+                        <li><a href="package.php">Driving Packages</a></li>
+                        <li><a href="booking.php">Book a Lesson</a></li>
                     </ul>
                 </div>
 
@@ -503,15 +501,15 @@ endif;
 
                     <p class="footer-contact-item">
                         <span>☎</span>
-                        <a href="#contact">Contact Our Team</a>
+                        <a href="index.php#contact">Contact Our Team</a>
                     </p>
 
                     <p class="footer-contact-item">
                         <span>✉</span>
-                        <a href="#contact">Send Us a Message</a>
+                        <a href="index.php#contact">Send Us a Message</a>
                     </p>
 
-                    <a href="#contact" class="footer-cta">
+                    <a href="booking.php" class="footer-cta">
                         Book Your Lesson <span>↗</span>
                     </a>
                 </div>
@@ -526,8 +524,8 @@ endif;
                 </p>
 
                 <div class="footer-bottom-links">
-                    <a href="#contact">Privacy Policy</a>
-                    <a href="#contact">Terms & Conditions</a>
+                    <a href="index.php#contact">Privacy Policy</a>
+                    <a href="index.php#contact">Terms & Conditions</a>
                 </div>
             </div>
         </div>
