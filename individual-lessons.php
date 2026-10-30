@@ -598,7 +598,7 @@ $services = [
                             <?php endforeach; ?>
                         </ul>
 
-                        <a class="choose-btn" href="booking.php?service=<?= urlencode(
+                        <a class="choose-btn" href="add-to-cart.php?service=<?= urlencode(
                                 $service['code']
                             ) ?>">
                             Choose Package

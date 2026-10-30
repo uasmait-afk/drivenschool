@@ -1,4 +1,3 @@
-
 <?php
 $customPackages = [
     [
@@ -672,7 +671,7 @@ function e($value): string
                         </ul>
 
                         <a class="choose-btn"
-                           href="booking.php?package=custom-<?= (int) $package['lessons'] ?>">
+                           href="add-to-cart.php?package=custom-<?= (int) $package['lessons'] ?>">
                             Choose Package
                             <i class="bi bi-arrow-right"></i>
                         </a>

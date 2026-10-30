@@ -1,4 +1,4 @@
-git status<?php
+<?php
 declare(strict_types=1);
 
 return [

@@ -478,7 +478,7 @@ $standardPackages = [
                         </ul>
 
                         <a
-                            href="booking.php?package=standard-<?= (int) $package['lessons'] ?>"
+                            href="add-to-cart.php?package=standard-<?= (int) $package['lessons'] ?>"
                             class="choose-package-btn mt-auto"
                         >
                             Choose Package

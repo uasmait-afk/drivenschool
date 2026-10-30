@@ -377,7 +377,7 @@ function e($value) {
                             </li>
                         </ul>
 
-                        <a href="enroll.php?package=<?= urlencode($package['code']) ?>"
+                        <a href="add-to-cart.php?package=<?= urlencode($package['code']) ?>"
                             class="btn basic-btn package-btn">
                             Choose Package
                             <i class="bi bi-arrow-right"></i>

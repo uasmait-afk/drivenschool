@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 
@@ -18,11 +17,7 @@ if (empty($_SESSION['csrf_token'])) {
 
 function e($value): string
 {
-    return htmlspecialchars(
-        (string) ($value ?? ''),
-        ENT_QUOTES,
-        'UTF-8'
-    );
+    return htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
 }
 
 function tableExists(PDO $pdo, string $table): bool
@@ -33,9 +28,7 @@ function tableExists(PDO $pdo, string $table): bool
          WHERE table_schema = DATABASE()
          AND table_name = :table'
     );
-
     $stmt->execute(['table' => $table]);
-
     return (int) $stmt->fetchColumn() > 0;
 }
 
@@ -46,7 +39,6 @@ function tableColumns(PDO $pdo, string $table): array
     }
 
     $stmt = $pdo->query("SHOW COLUMNS FROM `$table`");
-
     return array_column($stmt->fetchAll(PDO::FETCH_ASSOC), 'Field');
 }
 
@@ -66,6 +58,7 @@ function fetchRows(PDO $pdo, string $sql): array
 $sections = [
     'overview',
     'bookings',
+    'orders',
     'students',
     'messages',
     'payments',
@@ -129,7 +122,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $check = $pdo->prepare(
                     'SELECT id, status FROM bookings WHERE id = :id'
                 );
-
                 $check->execute(['id' => $bookingId]);
                 $updated = $check->fetch(PDO::FETCH_ASSOC);
 
@@ -162,7 +154,7 @@ if (isset($_GET['updated'])) {
 }
 
 /* =========================================
-   4. Load existing tables
+   4. Load bookings
 ========================================= */
 $bookings = fetchRows(
     $pdo,
@@ -248,16 +240,14 @@ $contactColumns = $contactTable
 $messages = [];
 
 if ($contactTable && in_array('id', $contactColumns, true)) {
-    $safeTable = $contactTable;
-
     $messages = fetchRows(
         $pdo,
-        "SELECT * FROM `$safeTable` ORDER BY id DESC LIMIT 200"
+        "SELECT * FROM `$contactTable` ORDER BY id DESC LIMIT 200"
     );
 }
 
 /* =========================================
-   7. Payments (optional table)
+   7. Payments
 ========================================= */
 $payments = [];
 $paymentColumns = [];
@@ -278,7 +268,8 @@ $paidCount = 0;
 $paidTotal = 0;
 
 foreach ($payments as $payment) {
-    $status = strtolower((string) ($payment['status'] ?? ''));
+    // Correct database column: payment_status
+    $status = strtolower((string) ($payment['payment_status'] ?? ''));
 
     if (in_array($status, ['paid', 'completed', 'succeeded'], true)) {
         $paidCount++;
@@ -292,7 +283,41 @@ foreach ($payments as $payment) {
 }
 
 /* =========================================
-   8. Navigation helper
+   8. Orders
+========================================= */
+$orders = [];
+
+if (tableExists($pdo, 'orders')) {
+    $orders = fetchRows(
+        $pdo,
+        'SELECT id, order_number, full_name, email, phone,
+                total_cents, currency, order_status, created_at
+         FROM orders
+         ORDER BY created_at DESC
+         LIMIT 200'
+    );
+}
+
+$totalOrders = count($orders);
+$paidOrders = 0;
+$pendingOrders = 0;
+$orderSalesCents = 0;
+
+foreach ($orders as $order) {
+    $orderStatus = strtolower((string) ($order['order_status'] ?? ''));
+
+    if ($orderStatus === 'paid') {
+        $paidOrders++;
+        $orderSalesCents += (int) $order['total_cents'];
+    }
+
+    if (in_array($orderStatus, ['pending', 'payment_pending'], true)) {
+        $pendingOrders++;
+    }
+}
+
+/* =========================================
+   9. Navigation helper
 ========================================= */
 function navLink(string $key, string $label, string $icon, string $current): string
 {
@@ -303,318 +328,354 @@ function navLink(string $key, string $label, string $icon, string $current): str
         '<i class="bi ' . e($icon) . '"></i>' .
         '<span>' . e($label) . '</span></a>';
 }
+
+$titles = [
+    'overview' => 'Dashboard Overview',
+    'bookings' => 'Booking Management',
+    'orders' => 'Order Management',
+    'students' => 'Student Directory',
+    'messages' => 'Contact Messages',
+    'payments' => 'Payment Records',
+    'reports' => 'Reports & Analytics'
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <title>Admin Dashboard | DriveN School</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-          rel="stylesheet">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-          rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
     <style>
-        :root {
-            --navy: #101d35;
-            --deep: #091426;
-            --gold: #f5a623;
-            --gold-hover: #ffbb4c;
-            --bg: #f4f7fc;
-            --text: #26354d;
-            --muted: #758198;
-            --border: #e5eaf2;
-        }
+    :root {
+        --navy: #101d35;
+        --deep: #091426;
+        --gold: #f5a623;
+        --gold-hover: #ffbb4c;
+        --bg: #f4f7fc;
+        --text: #26354d;
+        --muted: #758198;
+        --border: #e5eaf2;
+    }
 
-        * { box-sizing: border-box; }
+    * { box-sizing: border-box; }
 
-        body {
-            margin: 0;
-            background: var(--bg);
-            color: var(--text);
-            font-family: "Segoe UI", Arial, sans-serif;
-        }
+    body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Segoe UI", Arial, sans-serif;
+    }
 
-        .topbar {
-            background: linear-gradient(110deg, var(--deep), var(--navy));
-            border-bottom: 3px solid var(--gold);
-            color: white;
-            padding: 16px 24px;
+    .topbar {
+        background: linear-gradient(110deg, var(--deep), var(--navy));
+        border-bottom: 3px solid var(--gold);
+        color: white;
+        padding: 16px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .brand {
+        color: white;
+        text-decoration: none;
+        font-size: 23px;
+        font-weight: 800;
+    }
+
+    .brand-mark {
+        display: inline-grid;
+        place-items: center;
+        background: var(--gold);
+        color: var(--navy);
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        margin-right: 9px;
+    }
+
+    .brand span:last-child { color: var(--gold); }
+
+    .gold-btn {
+        background: var(--gold);
+        color: var(--navy);
+        border: 0;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .gold-btn:hover {
+        background: var(--gold-hover);
+        color: var(--navy);
+    }
+
+    .layout {
+        display: grid;
+        grid-template-columns: 245px minmax(0, 1fr);
+        min-height: calc(100vh - 75px);
+    }
+
+    .sidebar {
+        background: var(--navy);
+        padding: 25px 14px;
+    }
+
+    .side-label {
+        color: #9caac0;
+        padding: 8px 13px 13px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+    }
+
+    .side-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #d5ddec;
+        padding: 13px 14px;
+        margin-bottom: 6px;
+        text-decoration: none;
+        border-radius: 9px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .side-link i { font-size: 18px; }
+
+    .side-link:hover,
+    .side-link.active {
+        background: rgba(245, 166, 35, .14);
+        color: var(--gold);
+    }
+
+    .content {
+        min-width: 0;
+        padding: 32px;
+    }
+
+    .eyebrow {
+        color: #a66d0c;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 2px;
+    }
+
+    .page-title {
+        color: var(--navy);
+        font-weight: 800;
+        margin: 7px 0;
+    }
+
+    .muted { color: var(--muted); }
+
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 16px;
+        margin: 25px 0;
+    }
+
+    .stat-card,
+    .panel {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(16, 29, 53, .04);
+    }
+
+    .stat-card { padding: 20px; }
+
+    .stat-icon {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        background: #fff3dc;
+        color: #9a650e;
+        border-radius: 12px;
+        font-size: 20px;
+        margin-bottom: 18px;
+    }
+
+    .stat-label {
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    .stat-number {
+        color: var(--navy);
+        font-size: 30px;
+        font-weight: 800;
+    }
+
+    .panel {
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+
+    .panel-head {
+        padding: 21px 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .panel-head h2 {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--navy);
+        margin: 0;
+    }
+
+    .table-responsive { padding: 0 18px 12px; }
+
+    .table {
+        margin: 0;
+        vertical-align: middle;
+    }
+
+    .table th {
+        color: var(--muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .6px;
+        white-space: nowrap;
+    }
+
+    .table td,
+    .table th {
+        padding: 15px 12px;
+        border-color: #edf0f6;
+        font-size: 13px;
+    }
+
+    .table td { overflow-wrap: anywhere; }
+
+    .form-select {
+        min-width: 125px;
+        font-size: 12px;
+    }
+
+    .update-btn {
+        background: var(--navy);
+        color: white;
+        border: 0;
+        border-radius: 7px;
+        padding: 8px 10px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .update-btn:hover { background: #2878f0; }
+
+    .status {
+        display: inline-block;
+        border-radius: 30px;
+        padding: 6px 10px;
+        background: #fff3dc;
+        color: #8b5c0a;
+        font-weight: 700;
+        font-size: 11px;
+    }
+
+    .empty {
+        padding: 45px 20px;
+        text-align: center;
+        color: var(--muted);
+    }
+
+    .empty i {
+        font-size: 35px;
+        display: block;
+        margin-bottom: 12px;
+        color: var(--gold);
+    }
+
+    .quick-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 25px;
+    }
+
+    .quick-link {
+        display: block;
+        padding: 20px;
+        background: white;
+        color: var(--navy);
+        border: 1px solid var(--border);
+        border-radius: 13px;
+        text-decoration: none;
+        font-weight: 800;
+    }
+
+    .quick-link i {
+        color: #b77812;
+        font-size: 22px;
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    .quick-link:hover { border-color: var(--gold); }
+
+    .report-bar {
+        height: 10px;
+        background: #edf0f6;
+        border-radius: 20px;
+        overflow: hidden;
+        margin: 8px 0 18px;
+    }
+
+    .report-fill {
+        height: 100%;
+        background: var(--gold);
+        border-radius: 20px;
+    }
+
+    .footer {
+        padding: 20px;
+        color: var(--muted);
+        text-align: center;
+        font-size: 12px;
+    }
+
+    @media (max-width: 1100px) {
+        .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 760px) {
+        .layout { grid-template-columns: 1fr; }
+        .sidebar { padding: 12px; }
+        .sidebar nav {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
+            flex-wrap: wrap;
+            gap: 5px;
         }
-
-        .brand {
-            color: white;
-            text-decoration: none;
-            font-size: 23px;
-            font-weight: 800;
-        }
-
-        .brand-mark {
-            display: inline-grid;
-            place-items: center;
-            background: var(--gold);
-            color: var(--navy);
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            margin-right: 9px;
-        }
-
-        .brand span:last-child { color: var(--gold); }
-
-        .gold-btn {
-            background: var(--gold);
-            color: var(--navy);
-            border: 0;
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-weight: 700;
-            text-decoration: none;
-        }
-
-        .gold-btn:hover { background: var(--gold-hover); color: var(--navy); }
-
-        .layout {
-            display: grid;
-            grid-template-columns: 245px minmax(0, 1fr);
-            min-height: calc(100vh - 75px);
-        }
-
-        .sidebar {
-            background: var(--navy);
-            padding: 25px 14px;
-        }
-
-        .side-label {
-            color: #9caac0;
-            padding: 8px 13px 13px;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 1.5px;
-        }
-
-        .side-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #d5ddec;
-            padding: 13px 14px;
-            margin-bottom: 6px;
-            text-decoration: none;
-            border-radius: 9px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .side-link i { font-size: 18px; }
-
-        .side-link:hover,
-        .side-link.active {
-            background: rgba(245,166,35,.14);
-            color: var(--gold);
-        }
-
-        .content {
-            min-width: 0;
-            padding: 32px;
-        }
-
-        .eyebrow {
-            color: #a66d0c;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 2px;
-        }
-
-        .page-title {
-            color: var(--navy);
-            font-weight: 800;
-            margin: 7px 0;
-        }
-
-        .muted { color: var(--muted); }
-
+        .side-label { width: 100%; }
+        .side-link { margin: 0; padding: 10px; }
+        .content { padding: 20px 13px; }
         .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 16px;
-            margin: 25px 0;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
         }
-
-        .stat-card, .panel {
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(16,29,53,.04);
-        }
-
-        .stat-card { padding: 20px; }
-
-        .stat-icon {
-            display: grid;
-            place-items: center;
-            width: 42px;
-            height: 42px;
-            background: #fff3dc;
-            color: #9a650e;
-            border-radius: 12px;
-            font-size: 20px;
-            margin-bottom: 18px;
-        }
-
-        .stat-label { color: var(--muted); font-size: 13px; }
-        .stat-number { color: var(--navy); font-size: 30px; font-weight: 800; }
-
-        .panel { overflow: hidden; margin-bottom: 24px; }
-
-        .panel-head {
-            padding: 21px 24px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .panel-head h2 {
-            font-size: 18px;
-            font-weight: 800;
-            color: var(--navy);
-            margin: 0;
-        }
-
-        .table-responsive { padding: 0 18px 12px; }
-
-        .table { margin: 0; vertical-align: middle; }
-
-        .table th {
-            color: var(--muted);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: .6px;
-            white-space: nowrap;
-        }
-
-        .table td, .table th {
-            padding: 15px 12px;
-            border-color: #edf0f6;
-            font-size: 13px;
-        }
-
-        .table td { overflow-wrap: anywhere; }
-
-        .form-select { min-width: 125px; font-size: 12px; }
-
-        .update-btn {
-            background: var(--navy);
-            color: white;
-            border: 0;
-            border-radius: 7px;
-            padding: 8px 10px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .update-btn:hover { background: #2878f0; }
-
-        .status {
-            display: inline-block;
-            border-radius: 30px;
-            padding: 6px 10px;
-            background: #fff3dc;
-            color: #8b5c0a;
-            font-weight: 700;
-            font-size: 11px;
-        }
-
-        .empty {
-            padding: 45px 20px;
-            text-align: center;
-            color: var(--muted);
-        }
-
-        .empty i {
-            font-size: 35px;
-            display: block;
-            margin-bottom: 12px;
-            color: var(--gold);
-        }
-
-        .quick-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 16px;
-            margin-bottom: 25px;
-        }
-
-        .quick-link {
-            display: block;
-            padding: 20px;
-            background: white;
-            color: var(--navy);
-            border: 1px solid var(--border);
-            border-radius: 13px;
-            text-decoration: none;
-            font-weight: 800;
-        }
-
-        .quick-link i {
-            color: #b77812;
-            font-size: 22px;
-            display: block;
-            margin-bottom: 12px;
-        }
-
-        .quick-link:hover { border-color: var(--gold); }
-
-        .report-bar {
-            height: 10px;
-            background: #edf0f6;
-            border-radius: 20px;
-            overflow: hidden;
-            margin: 8px 0 18px;
-        }
-
-        .report-fill {
-            height: 100%;
-            background: var(--gold);
-            border-radius: 20px;
-        }
-
-        .footer {
-            padding: 20px;
-            color: var(--muted);
-            text-align: center;
-            font-size: 12px;
-        }
-
-        @media (max-width: 1100px) {
-            .stat-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
-            .quick-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
-        }
-
-        @media (max-width: 760px) {
-            .layout { grid-template-columns: 1fr; }
-            .sidebar { padding: 12px; }
-            .sidebar nav { display: flex; flex-wrap: wrap; gap: 5px; }
-            .side-label { width: 100%; }
-            .side-link { margin: 0; padding: 10px; }
-            .content { padding: 20px 13px; }
-            .stat-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
-            .stat-card { padding: 14px; }
-            .stat-number { font-size: 25px; }
-            .quick-grid { grid-template-columns: 1fr; }
-            .topbar { padding: 13px; }
-            .brand { font-size: 18px; }
-        }
+        .stat-card { padding: 14px; }
+        .stat-number { font-size: 25px; }
+        .quick-grid { grid-template-columns: 1fr; }
+        .topbar { padding: 13px; }
+        .brand { font-size: 18px; }
+    }
     </style>
 </head>
 
@@ -632,8 +693,7 @@ function navLink(string $key, string $label, string $icon, string $current): str
         </a>
 
         <form action="logout.php" method="POST" class="m-0">
-            <input type="hidden" name="csrf_token"
-                   value="<?= e($_SESSION['csrf_token']) ?>">
+            <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
             <button class="gold-btn" type="submit">
                 <i class="bi bi-box-arrow-right me-1"></i> Logout
             </button>
@@ -645,10 +705,10 @@ function navLink(string $key, string $label, string $icon, string $current): str
 
     <aside class="sidebar">
         <div class="side-label">ADMIN MENU</div>
-
         <nav>
             <?= navLink('overview', 'Overview', 'bi-grid-1x2', $section) ?>
             <?= navLink('bookings', 'Bookings', 'bi-calendar2-check', $section) ?>
+            <?= navLink('orders', 'Orders', 'bi-bag-check', $section) ?>
             <?= navLink('students', 'Students', 'bi-people', $section) ?>
             <?= navLink('messages', 'Messages', 'bi-envelope', $section) ?>
             <?= navLink('payments', 'Payments', 'bi-credit-card', $section) ?>
@@ -661,24 +721,8 @@ function navLink(string $key, string $label, string $icon, string $current): str
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
             <div>
                 <div class="eyebrow">DRIVEN SCHOOL MANAGEMENT</div>
-
-                <h1 class="page-title">
-                    <?php
-                    $titles = [
-                        'overview' => 'Dashboard Overview',
-                        'bookings' => 'Booking Management',
-                        'students' => 'Student Directory',
-                        'messages' => 'Contact Messages',
-                        'payments' => 'Payment Records',
-                        'reports' => 'Reports & Analytics'
-                    ];
-                    echo e($titles[$section]);
-                    ?>
-                </h1>
-
-                <p class="muted mb-0">
-                    Manage your driving school from one place.
-                </p>
+                <h1 class="page-title"><?= e($titles[$section]) ?></h1>
+                <p class="muted mb-0">Manage your driving school from one place.</p>
             </div>
 
             <div class="muted small">
@@ -694,6 +738,7 @@ function navLink(string $key, string $label, string $icon, string $current): str
         <?php if ($error !== ''): ?>
             <div class="alert alert-danger"><?= e($error) ?></div>
         <?php endif; ?>
+
 
         <?php if ($section === 'overview'): ?>
 
@@ -723,55 +768,48 @@ function navLink(string $key, string $label, string $icon, string $current): str
                 <a class="quick-link" href="admin.php?section=bookings">
                     <i class="bi bi-calendar2-check"></i>
                     Manage Bookings
-                    <div class="muted small mt-2">
-                        Review and update appointment status.
-                    </div>
+                    <div class="muted small mt-2">Review and update appointment status.</div>
+                </a>
+
+                <a class="quick-link" href="admin.php?section=orders">
+                    <i class="bi bi-bag-check"></i>
+                    Manage Orders
+                    <div class="muted small mt-2">View customer orders and payment status.</div>
                 </a>
 
                 <a class="quick-link" href="admin.php?section=students">
                     <i class="bi bi-people"></i>
                     Student Directory
-                    <div class="muted small mt-2">
-                        View registered student accounts.
-                    </div>
+                    <div class="muted small mt-2">View registered student accounts.</div>
                 </a>
 
                 <a class="quick-link" href="admin.php?section=messages">
                     <i class="bi bi-envelope"></i>
                     Contact Messages
-                    <div class="muted small mt-2">
-                        Review customer inquiries.
-                    </div>
+                    <div class="muted small mt-2">Review customer inquiries.</div>
                 </a>
 
                 <a class="quick-link" href="admin.php?section=payments">
                     <i class="bi bi-credit-card"></i>
                     Payment Records
-                    <div class="muted small mt-2">
-                        Review available payment records.
-                    </div>
+                    <div class="muted small mt-2">Review available payment records.</div>
                 </a>
 
                 <a class="quick-link" href="admin.php?section=reports">
                     <i class="bi bi-bar-chart"></i>
                     Reports
-                    <div class="muted small mt-2">
-                        See booking and payment summaries.
-                    </div>
+                    <div class="muted small mt-2">See booking and payment summaries.</div>
                 </a>
             </section>
 
-        <?php endif; ?>
 
-        <?php if ($section === 'bookings'): ?>
+        <?php elseif ($section === 'bookings'): ?>
 
             <section class="panel">
                 <div class="panel-head">
                     <div>
                         <h2><i class="bi bi-calendar2-check me-2"></i>All Bookings</h2>
-                        <div class="muted small mt-1">
-                            Change the status and press Update.
-                        </div>
+                        <div class="muted small mt-1">Change the status and press Update.</div>
                     </div>
                     <span class="status"><?= $totalBookings ?> records</span>
                 </div>
@@ -785,64 +823,118 @@ function navLink(string $key, string $label, string $icon, string $current): str
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
-                            <tr>
-                                <th>ID / Customer</th>
-                                <th>Lesson / Package</th>
-                                <th>Appointment</th>
-                                <th>Status</th>
-                                <th>Update</th>
-                            </tr>
+                                <tr>
+                                    <th>ID / Customer</th>
+                                    <th>Lesson / Package</th>
+                                    <th>Appointment</th>
+                                    <th>Status</th>
+                                    <th>Update</th>
+                                </tr>
                             </thead>
                             <tbody>
-                            <?php foreach ($bookings as $booking): ?>
-                                <tr>
-                                    <td>
-                                        <strong>#<?= (int) $booking['id'] ?>
-                                            <?= e($booking['full_name']) ?></strong>
-                                        <div class="muted mt-1"><?= e($booking['email']) ?></div>
-                                        <div class="muted"><?= e($booking['phone']) ?></div>
-                                    </td>
-                                    <td>
-                                        <strong><?= e($booking['lesson_type']) ?></strong>
-                                        <div class="muted mt-1"><?= e($booking['package_name']) ?></div>
-                                    </td>
-                                    <td>
-                                        <?= e($booking['booking_date']) ?>
-                                        <div class="muted mt-1"><?= e($booking['booking_time']) ?></div>
-                                    </td>
-                                    <td><span class="status"><?= e($booking['status']) ?></span></td>
-                                    <td>
-                                        <form method="POST" action="admin.php?section=bookings">
-                                            <input type="hidden" name="csrf_token"
-                                                   value="<?= e($_SESSION['csrf_token']) ?>">
-                                            <input type="hidden" name="booking_id"
-                                                   value="<?= (int) $booking['id'] ?>">
+                                <?php foreach ($bookings as $booking): ?>
+                                    <tr>
+                                        <td>
+                                            <strong>#<?= (int) $booking['id'] ?> <?= e($booking['full_name']) ?></strong>
+                                            <div class="muted mt-1"><?= e($booking['email']) ?></div>
+                                            <div class="muted"><?= e($booking['phone']) ?></div>
+                                        </td>
+                                        <td>
+                                            <strong><?= e($booking['lesson_type']) ?></strong>
+                                            <div class="muted mt-1"><?= e($booking['package_name']) ?></div>
+                                        </td>
+                                        <td>
+                                            <?= e($booking['booking_date']) ?>
+                                            <div class="muted mt-1"><?= e($booking['booking_time']) ?></div>
+                                        </td>
+                                        <td><span class="status"><?= e($booking['status']) ?></span></td>
+                                        <td>
+                                            <form method="POST" action="admin.php?section=bookings">
+                                                <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
+                                                <input type="hidden" name="booking_id" value="<?= (int) $booking['id'] ?>">
 
-                                            <select name="status" class="form-select mb-2" required>
-                                                <?php foreach ($allowedStatuses as $status): ?>
-                                                    <option value="<?= e($status) ?>"
-                                                        <?= $booking['status'] === $status ? 'selected' : '' ?>>
-                                                        <?= e($status) ?>
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            </select>
+                                                <select name="status" class="form-select mb-2" required>
+                                                    <?php foreach ($allowedStatuses as $status): ?>
+                                                        <option value="<?= e($status) ?>" <?= $booking['status'] === $status ? 'selected' : '' ?>>
+                                                            <?= e($status) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
 
-                                            <button class="update-btn" type="submit">
-                                                <i class="bi bi-check2 me-1"></i> Update
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
+                                                <button class="update-btn" type="submit">
+                                                    <i class="bi bi-check2 me-1"></i> Update
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
                 <?php endif; ?>
             </section>
 
-        <?php endif; ?>
 
-        <?php if ($section === 'students'): ?>
+        <?php elseif ($section === 'orders'): ?>
+
+            <section class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h2><i class="bi bi-bag-check me-2"></i>Order Management</h2>
+                        <div class="muted small mt-1">Customer orders and payment status.</div>
+                    </div>
+                    <span class="status"><?= $totalOrders ?> Orders</span>
+                </div>
+
+                <?php if (!$orders): ?>
+                    <div class="empty">
+                        <i class="bi bi-bag"></i>
+                        No orders found.
+                    </div>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Order Number</th>
+                                    <th>Customer</th>
+                                    <th>Phone</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($orders as $order): ?>
+                                    <tr>
+                                        <td><strong><?= e($order['order_number']) ?></strong></td>
+                                        <td>
+                                            <div><?= e($order['full_name']) ?></div>
+                                            <small class="muted"><?= e($order['email']) ?></small>
+                                        </td>
+                                        <td><?= e($order['phone']) ?></td>
+                                        <td>
+                                            <?= e($order['currency']) ?>
+                                            <?= number_format((int) $order['total_cents'] / 100, 2) ?>
+                                        </td>
+                                        <td>
+                                            <span class="status">
+                                                <?= e(ucfirst(str_replace('_', ' ', $order['order_status']))) ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <?= e(date('M d, Y h:i A', strtotime($order['created_at']))) ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </section>
+
+
+        <?php elseif ($section === 'students'): ?>
 
             <section class="panel">
                 <div class="panel-head">
@@ -859,29 +951,28 @@ function navLink(string $key, string $label, string $icon, string $current): str
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
-                            <tr>
-                                <?php foreach (array_keys($students[0]) as $column): ?>
-                                    <th><?= e(ucwords(str_replace('_', ' ', $column))) ?></th>
-                                <?php endforeach; ?>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <?php foreach ($students as $student): ?>
                                 <tr>
-                                    <?php foreach ($student as $value): ?>
-                                        <td><?= e($value) ?></td>
+                                    <?php foreach (array_keys($students[0]) as $column): ?>
+                                        <th><?= e(ucwords(str_replace('_', ' ', $column))) ?></th>
                                     <?php endforeach; ?>
                                 </tr>
-                            <?php endforeach; ?>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($students as $student): ?>
+                                    <tr>
+                                        <?php foreach ($student as $value): ?>
+                                            <td><?= e($value) ?></td>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
                 <?php endif; ?>
             </section>
 
-        <?php endif; ?>
 
-        <?php if ($section === 'messages'): ?>
+        <?php elseif ($section === 'messages'): ?>
 
             <section class="panel">
                 <div class="panel-head">
@@ -894,62 +985,63 @@ function navLink(string $key, string $label, string $icon, string $current): str
                         <i class="bi bi-envelope-open"></i>
                         No messages found, or the contact table name differs.
                         <div class="small mt-2">
-                            Detected table:
-                            <?= e($contactTable ?? 'None') ?>
+                            Detected table: <?= e($contactTable ?? 'None') ?>
                         </div>
                     </div>
                 <?php else: ?>
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
-                            <tr>
-                                <?php foreach (array_keys($messages[0]) as $column): ?>
-                                    <th><?= e(ucwords(str_replace('_', ' ', $column))) ?></th>
-                                <?php endforeach; ?>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <?php foreach ($messages as $row): ?>
                                 <tr>
-                                    <?php foreach ($row as $column => $value): ?>
-                                        <td>
-                                            <?php
-                                            if (stripos((string) $column, 'message') !== false ||
-                                                stripos((string) $column, 'body') !== false) {
-                                                echo nl2br(e($value));
-                                            } else {
-                                                echo e($value);
-                                            }
-                                            ?>
-                                        </td>
+                                    <?php foreach (array_keys($messages[0]) as $column): ?>
+                                        <th><?= e(ucwords(str_replace('_', ' ', $column))) ?></th>
                                     <?php endforeach; ?>
                                 </tr>
-                            <?php endforeach; ?>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($messages as $row): ?>
+                                    <tr>
+                                        <?php foreach ($row as $column => $value): ?>
+                                            <td>
+                                                <?php
+                                                if (
+                                                    stripos((string) $column, 'message') !== false ||
+                                                    stripos((string) $column, 'body') !== false
+                                                ) {
+                                                    echo nl2br(e($value));
+                                                } else {
+                                                    echo e($value);
+                                                }
+                                                ?>
+                                            </td>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
                 <?php endif; ?>
             </section>
 
-        <?php endif; ?>
 
-        <?php if ($section === 'payments'): ?>
+        <?php elseif ($section === 'payments'): ?>
 
             <section class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
                 <article class="stat-card">
                     <div class="stat-label">Payment Records</div>
                     <div class="stat-number"><?= $paymentCount ?></div>
                 </article>
+
                 <article class="stat-card">
                     <div class="stat-label">Successful Records</div>
                     <div class="stat-number"><?= $paidCount ?></div>
                 </article>
+
                 <article class="stat-card">
                     <div class="stat-label">Recorded Amount</div>
                     <div class="stat-number" style="font-size:25px">
                         $<?= number_format($paidTotal, 2) ?>
                     </div>
-                    <div class="muted small">Based on recognized amount columns.</div>
                 </article>
             </section>
 
@@ -963,50 +1055,71 @@ function navLink(string $key, string $label, string $icon, string $current): str
                     <div class="empty">
                         <i class="bi bi-credit-card"></i>
                         No payment records available yet.
-                        <div class="small mt-2">
-                            This page does not create or verify payments.
-                        </div>
+                        <div class="small mt-2">This page does not create or verify payments.</div>
                     </div>
                 <?php else: ?>
                     <div class="table-responsive">
                         <table class="table">
                             <thead>
-                            <tr>
-                                <?php foreach (array_keys($payments[0]) as $column): ?>
-                                    <th><?= e(ucwords(str_replace('_', ' ', $column))) ?></th>
-                                <?php endforeach; ?>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <?php foreach ($payments as $payment): ?>
                                 <tr>
-                                    <?php foreach ($payment as $value): ?>
-                                        <td><?= e($value) ?></td>
+                                    <?php foreach (array_keys($payments[0]) as $column): ?>
+                                        <th><?= e(ucwords(str_replace('_', ' ', $column))) ?></th>
                                     <?php endforeach; ?>
                                 </tr>
-                            <?php endforeach; ?>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($payments as $payment): ?>
+                                    <tr>
+                                        <?php foreach ($payment as $value): ?>
+                                            <td><?= e($value) ?></td>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
                 <?php endif; ?>
             </section>
 
-        <?php endif; ?>
 
-        <?php if ($section === 'reports'): ?>
+        <?php elseif ($section === 'reports'): ?>
 
             <section class="stat-grid">
                 <article class="stat-card">
                     <div class="stat-label">Total Bookings</div>
                     <div class="stat-number"><?= $totalBookings ?></div>
                 </article>
+
                 <article class="stat-card">
                     <div class="stat-label">Registered Students</div>
                     <div class="stat-number"><?= $studentCount ?></div>
                 </article>
+
                 <article class="stat-card">
                     <div class="stat-label">Successful Payment Records</div>
                     <div class="stat-number"><?= $paidCount ?></div>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-label">Total Orders</div>
+                    <div class="stat-number"><?= $totalOrders ?></div>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-label">Paid Orders</div>
+                    <div class="stat-number"><?= $paidOrders ?></div>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-label">Pending Orders</div>
+                    <div class="stat-number"><?= $pendingOrders ?></div>
+                </article>
+
+                <article class="stat-card">
+                    <div class="stat-label">Order Sales</div>
+                    <div class="stat-number" style="font-size:25px">
+                        $<?= number_format($orderSalesCents / 100, 2) ?>
+                    </div>
                 </article>
             </section>
 
@@ -1033,9 +1146,7 @@ function navLink(string $key, string $label, string $icon, string $current): str
 
                         <div class="report-bar">
                             <div class="report-fill"
-                                 style="width:<?= $totalBookings > 0
-                                     ? min(100, ($count / $totalBookings) * 100)
-                                     : 0 ?>%">
+                                style="width:<?= $totalBookings > 0 ? min(100, ($count / $totalBookings) * 100) : 0 ?>%">
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -1047,6 +1158,11 @@ function navLink(string $key, string $label, string $icon, string $current): str
                         <strong>$<?= number_format($paidTotal, 2) ?></strong>
                     </div>
 
+                    <div class="d-flex justify-content-between mt-3">
+                        <span>Paid order sales</span>
+                        <strong>$<?= number_format($orderSalesCents / 100, 2) ?></strong>
+                    </div>
+
                     <p class="muted small mt-3 mb-0">
                         This is a summary of records currently stored in the database,
                         not a verified accounting statement.
@@ -1055,6 +1171,7 @@ function navLink(string $key, string $label, string $icon, string $current): str
             </section>
 
         <?php endif; ?>
+
 
         <footer class="footer">
             &copy; <?= date('Y') ?> DriveN School · Admin Management

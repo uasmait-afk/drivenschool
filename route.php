@@ -19,6 +19,8 @@ $routes = [
     'individual-lessons' => 'individual-lessons.php',
     'custom-packages' => 'custom-packages.php',
     '5-hour-class' => '5-hour-class.php',
+    'add-to-cart' => 'add-to-cart.php',
+
     
 ];
 

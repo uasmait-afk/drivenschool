@@ -24,7 +24,7 @@
 
 
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="packagesDropdown" role="button"
+                    <a class="nav-link dropdown-toggle" href="/drivenschool/packages" id="packagesDropdown" role="button"
                         data-bs-toggle="dropdown" aria-expanded="false">
                         Packages
                     </a>
